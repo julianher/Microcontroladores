@@ -1,0 +1,361 @@
+;***********************
+;* This stationery serves as the framework for a user application. *
+;* For a more comprehensive program that demonstrates the more     *
+;* advanced functionality of this processor, please see the        *
+;* demonstration applications, located in the examples             *
+;* subdirectory of the "Freescale CodeWarrior for HC08" program    *
+;* directory.                                                      *
+;***********************
+
+; Include derivative-specific definitions
+            INCLUDE 'derivative.inc'
+            
+
+; export symbols
+            XDEF _Startup, main, leerteclado
+            ; we export both '_Startup' and 'main' as symbols. Either can
+            ; be referenced in the linker .prm file or from C/C++ later on
+            
+            
+            
+            XREF __SEG_END_SSTACK   ; symbol defined by the linker for the end of the stack
+
+
+; variable/data section
+MY_ZEROPAGE: SECTION  SHORT         ; Insert here your data definition
+aux5 ds.b 1
+aux4 ds.b 1
+aux6 ds.b 1
+tecla ds.b 1
+caso ds.b 1
+teclag1 ds.b 1
+teclag2 ds.b 1
+teclag3 ds.b 1
+numero ds.b 1
+residuo ds.b 1
+; code section
+MyCode:     SECTION
+main:
+_Startup:
+        
+		lda #%00001111
+		sta PTAPE ;habilita resistencia inntene de las salidas del micro
+		clr PTADD; deja a todos como entrada
+		mov #%11110000, PTBDD ; habilita 4 pines como salida
+		lda #%01010010
+		sta SOPT1;carga lo anterio al perro guardian
+		mov #%00001000, SCIC2; activa pin de transmicion en comunicacion serial
+        mov #0T, SCIBDH
+        mov #28T, SCIBDL;para ser division de frecuancia en la comunicacion seria de 9600 baudios
+        mov #%00000110, KBISC;baja bandera y habilita interrupcion
+		mov #%00001111, KBIPE;habilita pines para interrupcion
+		cli;habilita interrupcion en general
+ menu: 
+			 mov #1T, caso 
+			
+			 mov #0T, teclag1
+			 mov #0T, teclag2
+			 mov #0T, teclag3
+			 mov #200T, tecla
+			 lda #62T
+			 bsr transmitir2
+casos:		
+			lda #1T
+			 
+			cbeq caso, caso1
+			lda #2T
+			cbeq caso, caso2
+			lda #3T
+			cbeq caso, caso1 
+			lda #4T
+			cbeq caso, caso4 
+			bra casos
+			
+caso1:
+			 lda #0T
+             cbeq tecla, enviartecla
+             lda #1T
+             cbeq tecla, enviartecla
+             lda #2T
+             cbeq tecla, enviartecla
+             lda #3T
+             cbeq tecla, enviartecla
+             lda #4T
+             cbeq tecla, enviartecla
+             lda #5T
+             cbeq tecla, enviartecla
+             lda #6T
+             cbeq tecla, enviartecla
+             lda #7T
+             cbeq tecla, enviartecla
+             lda #8T
+             cbeq tecla, enviartecla
+             lda #9T
+             cbeq tecla, enviartecla
+             lda #127T
+             cbeq tecla, del
+             bra casos
+menu2: 
+        bra menu
+transmitir2:
+        bsr transmitir
+        rts
+caso2:
+		 	lda #43T
+            cbeq tecla, enviartecla2
+			lda #42T
+            cbeq tecla, enviartecla2
+            lda #45T
+            cbeq tecla, enviartecla2
+            lda #47T
+            cbeq tecla, enviartecla2 
+            lda #127T
+             cbeq tecla, del           
+            bra casos
+             
+caso4:
+			lda #61T
+			cbeq tecla, enviartecla3
+			lda #127T
+			cbeq tecla, del           
+           
+			bra casos  
+casos2:
+           bra casos
+			
+enviartecla:	
+           lda #48T
+           add 	tecla
+           bsr transmitir   
+			bra guardar          
+
+enviartecla2:		
+			lda tecla
+			bsr transmitir
+			bra guardar2 
+enviartecla3:
+            mov #1T, caso
+            lda tecla
+            bsr transmitir
+            lda #43T
+            cbeq teclag2, opsumar
+            lda #45T
+            cbeq teclag2, oprestar
+            lda #47T
+            cbeq teclag2, opdividir
+             lda #42T
+            cbeq teclag2, opmultiplicar
+            
+del:        
+            lda #10T
+			bsr transmitir
+            bra menu2
+transmitir:
+            brclr 7,SCIS1,transmitir ;revisa que se pueda enviar
+			sta SCID
+			rts	
+guardar:
+			lda #1T
+			cbeq caso, guardar1
+			lda #3T
+			cbeq caso, guardar3
+guardar2:
+			mov tecla,teclag2
+			inc caso
+			mov #200T,tecla
+			bra casos2			
+guardar1:
+			mov tecla,teclag1			
+			inc caso
+			mov #200T,tecla
+			bra casos2
+guardar3:
+			mov tecla,teclag3
+			inc caso
+			mov #200T,tecla
+			bra casos2	
+casos3: 
+ 			bra casos2	
+del2:
+            bra del 
+transmitir3:
+           bsr transmitir
+           rts					
+opsumar:
+   lda teclag1
+   add teclag3
+   ldhx #0T
+   ldx #10T
+   div 
+   add #48T
+   bsr transmitir
+   sthx numero
+   lda numero
+   add #48T
+   bsr transmitir
+   bra del
+oprestar:
+   lda teclag1
+   sbc teclag3
+   add #49T
+   bsr transmitir
+   bra del
+opmultiplicar:
+   lda teclag1
+   ldx teclag3
+   mul
+   ldhx #0T
+   ldx #10T
+   div 
+   add #48T
+   bsr transmitir
+   sthx numero
+   lda numero
+   add #48T
+   bsr transmitir
+   bra del
+opdividir:
+   lda #0T
+   cbeq teclag3, divcero 
+   ldhx #0T
+   ldx teclag3
+   lda teclag1
+   div 
+   add #48T
+  bsr transmitir3
+   sthx residuo 
+   lda #32T
+   bsr transmitir3
+   lda #114T
+   bsr transmitir3
+   lda #58T
+   bsr transmitir3
+   lda #48T
+   add residuo
+   bsr transmitir3
+   bra del2
+				      
+
+ divcero:
+         lda #110T
+         bsr transmitir3
+         lda #111T
+         bsr transmitir3 
+         bra del2 
+leerteclado:
+			
+			clr PTBD
+			
+auxleerteclado:
+
+			
+			mov #%01110000, PTBD ;fila1
+			brclr 0,PTAD, tecla1
+			brclr 1,PTAD, tecla2
+			brclr 2,PTAD, tecla3
+			brclr 3,PTAD, suma
+			 
+			mov #%10110000, PTBD ;fila2
+			brclr 0,PTAD, tecla4
+			brclr 1,PTAD, tecla5
+			brclr 2,PTAD, tecla6
+			brclr 3,PTAD, resta
+			
+			mov #%11010000, PTBD ;fila3
+			brclr 0,PTAD, tecla7
+			brclr 1,PTAD, tecla8
+			brclr 2,PTAD, tecla9
+			brclr 3,PTAD, multiplicar
+			
+			mov #%11100000, PTBD ;fila4
+			brclr 0,PTAD, borrar
+			brclr 1,PTAD, tecla0
+			brclr 2,PTAD, igual
+			brclr 3,PTAD, dividir
+			
+			bra auxleerteclado
+suma:
+			lda #43T
+			sta tecla
+			 bra afuera
+												
+tecla1:
+			lda #1T
+			sta tecla
+			 bra afuera
+tecla2:
+			lda #2T
+			sta tecla
+			 bra afuera
+tecla3:
+			lda #3T
+			sta tecla
+			bra afuera
+tecla4:
+			lda #4T
+			sta tecla
+			 bra afuera
+tecla5:
+			lda #5T
+			sta tecla
+			 bra afuera
+tecla6:
+			lda #6T
+			sta tecla
+			 bra afuera
+tecla7:
+			lda #7T
+			sta tecla
+			bra afuera
+tecla8:
+			lda #8T
+			sta tecla
+			bra afuera
+tecla9:
+			lda #9T
+			sta tecla
+			 bra afuera
+tecla0:
+			lda #0T
+			sta tecla
+			 bra afuera
+borrar:
+			lda #127T
+			sta tecla
+			bra afuera
+igual:
+			lda #61T
+			sta tecla
+			 bra afuera
+resta:
+			lda #45T
+			sta tecla
+			bra afuera
+multiplicar:
+			lda #42T
+			sta tecla
+			 bra afuera
+dividir:
+			lda #47T
+			sta tecla
+			bra afuera
+
+afuera:
+            bsr Antirebote
+			bset 2,KBISC
+			mov #%00000000, PTBD
+			rti
+		
+Antirebote:
+				mov #255T, aux4  
+				mov #255T, aux5 
+				mov #2T, aux6 
+				
+Aux_retardo2:    
+
+				dbnz aux4, Aux_retardo2
+				mov #255T, aux4 
+				dbnz aux5, Aux_retardo2
+				mov #255T, aux5
+				dbnz aux6, Aux_retardo2
+				rts
