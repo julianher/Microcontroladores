@@ -1,0 +1,62 @@
+#include <hidef.h> /* for EnableInterrupts macro */
+#include "derivative.h" /* include peripheral declarations */
+
+
+
+
+
+void Transmitir(unsigned char);
+void delay(void);
+
+char entrada = 0; //arranca apagado
+int velocidad = 0; // velocidad del motor
+int velocidadL = 0; // velocidad a la que se quiere llegar
+int cambia=1;
+int cambia2=1;
+int speedload =0;
+void main(void) {
+	
+    PTBDD=0b11000000; //activa como salida PTBD 6 y 7 para controlar dirección
+    PTBD_PTBD7 = 1;   //activa por defecto dirección frontal
+    PTBD_PTBD6 = 0;
+	SOPT1 = 0b01010010; //Perro gardian
+	SCIC2 = 0b00001100;  //habilidta trasmición y recepción
+	SCIBD = 28;        // divisor ratio para los baudios
+	TPMCNT = 0;  //Limpia el contador
+	TPMMOD = 42999; // conteo máximo del contador
+	TPMC0V = entrada; // maximo del alto para controlar ciclo útil
+	TPMSC = 0b00001000; // no se divide la freciencia de bus, es decir se ecogió 000 en los pines 0-2 y el  01 en el pin 3 y 4 escoge la frecuencia de bus como fuente  
+	TPMC0SC = 0b00101000; // seleciona el pin pwm de generación pulsos positivos
+	
+
+	while (1) {
+		
+		while (SCID == 0) { // espera a que haya una entrada
+		}
+		entrada = SCID;
+
+		if (entrada == 115) { // si entrada es igual a stop velocidad igual a 0
+			velocidadL = 0;
+		} else {
+			if (entrada == 48) { // si entrada es igual a 0 tonces 100%
+				velocidadL = 100;
+				speedload = velocidadL;
+			} else {
+				if (entrada == 102) {//si entrada f entonces guira front
+					
+					   cambia=1;
+				} else {
+					if (entrada == 114) {//si entrada r entonces reverse
+						
+						   cambia=0;
+					} else {
+						if (0 < entrada - 48 < 10) {//entrada de la velocidad deseada
+							velocidadL = (entrada - 48) * 10;//cambia codigo ascii por "porcentaje" 
+							
+							speedload = velocidadL;
+						
+						}
+					}
+				}
+			}
+		}
