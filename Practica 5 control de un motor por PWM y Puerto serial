@@ -60,3 +60,63 @@ void main(void) {
 				}
 			}
 		}
+
+		TPMC0V = 430 * velocidad;//calculo porecentaje ciclo util 
+		Transmitir(velocidad / 100 + 48);//transmite la centena de la velocidad
+		Transmitir(velocidad / 10 % 10 + 48);//transmite decena
+		Transmitir(velocidad % 10 + 48);//transmite unidad
+		//bonus
+		
+		
+		if(cambia != cambia2){
+			velocidadL = 0;
+		}
+		if((velocidad == 0)&&(cambia != cambia2)){
+			velocidadL = speedload;
+			cambia2 = cambia;
+		}
+		
+		if(cambia2==1){
+			PTBD_PTBD7 = 1;
+			PTBD_PTBD6 = 0;
+		}else{
+			PTBD_PTBD7 = 0;
+			PTBD_PTBD6 = 1;
+		}
+		if(PTBD_PTBD7 == 1 && PTBD_PTBD6 == 0){
+			Transmitir(102);//transimte la dir ecion frontal 
+	
+		}else{
+			Transmitir(114);//transmite la direccion reversa
+		}
+		Transmitir(10);//cambio de linea
+		
+		
+		
+		
+		
+		if (velocidad < velocidadL) {
+			velocidad++;//aumento a la velodidad deseada
+			delay();
+		} else if (velocidad > velocidadL) {
+			velocidad--;//decremento a la velocidad deseada 
+			delay();
+		}
+		
+
+	}
+
+}
+
+void Transmitir(unsigned char buffer) {
+	while ((SCIS1 & 0b10000000) == 0) {
+
+	}
+	SCID = buffer;
+}
+
+void delay(void) {
+	int j;
+	for (j = 0; j < 5000; j++) {
+	}
+}
