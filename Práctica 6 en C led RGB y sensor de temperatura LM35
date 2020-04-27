@@ -1,0 +1,94 @@
+#include <hidef.h> /* for EnableInterrupts macro */
+#include "derivative.h" /* include peripheral declarations */
+void Transmitir(unsigned char);
+void Retardo(void);
+int temp;
+int temp2;
+
+void main(void) {
+
+   SOPT1=0b01010010;
+   PTBDD=0b11100000;   /*(7) entrada de la temperatura, este es por algo que tiene que ver con los canales */
+   SCIC2=0b00001000;
+   SCIBD=28;
+
+ ADCSC1=0b00011111;
+ ADCCFG=0b00001000;
+ APCTL1=0b00000010;
+ temp = 0;
+
+ while(1){
+    ADCSC1=0b0000001;
+    Transmitir(70);
+   
+    
+    while(ADCSC1 & 0b10000000==0){ }
+     temp = ADCR;
+     
+     Retardo();
+
+		Transmitir(temp / 100 % 10 + 48);//transmite la centena de la velocidad
+		Transmitir(temp / 10 % 10 + 48);//transmite decena
+		Transmitir(temp % 10 + 48);//transmite unidad
+     		Transmitir(10);
+		if (temp <= 46) {
+			PTBD_PTBD7 = 0; /* verde*/
+			PTBD_PTBD6 = 0; /* azul*/
+			PTBD_PTBD5 = 0;/* rojo*/
+			Transmitir(71);
+		} else { if (46 < temp && temp <= 51) {
+			PTBD_PTBD7 = 0; /* verde*/
+			PTBD_PTBD6 = 1; /* azul*/
+			PTBD_PTBD5 = 1;/* rojo*/
+			Transmitir(72);
+		} else { if (51 < temp && temp <= 57) {
+			PTBD_PTBD7 = 0; /* verde*/
+			PTBD_PTBD6 = 1; /* azul*/
+			PTBD_PTBD5 = 0;/* rojo*/
+			Transmitir(73);
+		} else {if (57 < temp && temp <= 63) {
+			PTBD_PTBD7 = 1; /* verde*/
+			PTBD_PTBD6 = 1; /* azul*/
+			PTBD_PTBD5 = 0;/* rojo*/
+			Transmitir(74);
+		} else {if (63 < temp && temp <= 69) {
+			PTBD_PTBD7 = 1; /* verde*/
+			PTBD_PTBD6 = 0; /* azul*/
+			PTBD_PTBD5 = 0;/* rojo*/
+			Transmitir(75);
+		} else {if (69 < temp && temp  <= 75) {
+			PTBD_PTBD7 = 1; /* verde*/
+			PTBD_PTBD6 = 0; /* azul*/
+			PTBD_PTBD5 = 1;
+			Transmitir(76);
+		} else {if (75 < temp && temp <= 81) {
+			PTBD_PTBD7 = 0; /* verde*/
+			PTBD_PTBD6 = 0; /* azul*/
+			PTBD_PTBD5 = 1;/* rojo*/
+			Transmitir(77);
+		} else {
+			PTBD_PTBD7 = 1; /* verde*/
+			PTBD_PTBD6 = 1; /* azul*/
+			PTBD_PTBD5 = 1;/* rojo*/
+			Transmitir(78);
+		}
+		}
+		}
+		}
+		}
+		}
+		}
+   }
+ }
+ 
+
+void Retardo(void){
+ unsigned long rtdo=0;
+ for(rtdo=0;rtdo<5000;rtdo++);
+}
+  void Transmitir(unsigned char buffer){
+
+     while((SCIS1&0b10000000)==0){ 
+     }
+     SCID=buffer;
+    }
