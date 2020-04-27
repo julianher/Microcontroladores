@@ -1,3 +1,8 @@
+
+ /*Hecho por Julian Hernandéz y Camilo Rodíguez clase de microcontroladores UNAL
+ Práctica 6
+ */
+
 #include <hidef.h> /* for EnableInterrupts macro */
 #include "derivative.h" /* include peripheral declarations */
 void Transmitir(unsigned char);
